@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { IoSunnyOutline } from "react-icons/io5";
 
 export default function Modal({ isOpen, setOpenModal }) {
+  const [pergunta, setPergunta] = useState('');
+  const [resposta, setResposta] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState('');
+
   if (!isOpen) return null;
 
-    const styles = {
-      container: {
+  const styles = {
+    container: {
       position: 'fixed',   // Mantém fixo na tela
       bottom: '40px',
       right: '16px',
@@ -62,6 +67,23 @@ export default function Modal({ isOpen, setOpenModal }) {
     },
     content: {
       padding: '16px',
+      overflowY: 'auto',
+    },
+    resposta: {
+      marginTop: '12px',
+      backgroundColor: '#1e1e2f',
+      padding: '10px',
+      borderRadius: '8px',
+      fontSize: '14px',
+      color: '#fff'
+    },
+    erro: {
+      marginTop: '12px',
+      backgroundColor: '#ff4d4d',
+      padding: '10px',
+      borderRadius: '8px',
+      fontSize: '14px',
+      color: '#fff'
     },
     footer: {
       display: 'flex',
@@ -85,7 +107,40 @@ export default function Modal({ isOpen, setOpenModal }) {
       fontSize: '18px',
       color: '#4aa3ff',
       cursor: 'pointer',
+      userSelect: 'none',
     },
+    loadingText: {
+      padding: '10px',
+      color: '#ccc',
+      fontSize: '13px',
+      textAlign: 'center',
+    }
+  };
+
+  const handleEnviar = async () => {
+    if (!pergunta.trim()) return;
+    setErro('');
+    setResposta('');
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://127.0.0.1:5000/pergunta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pergunta }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setResposta(data.resposta);
+      } else {
+        setErro(data.erro || 'Erro ao buscar resposta');
+      }
+    } catch {
+      setErro('Erro de conexão com o servidor.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -105,15 +160,19 @@ export default function Modal({ isOpen, setOpenModal }) {
       </div>
 
       <div style={styles.content}>
-        <button style={styles.exampleButton}>
+        <button style={styles.exampleButton} onClick={() => setPergunta("Quais as melhores palavras-chave para mim?")}>
           Como base no mercado atual, qual as melhores palavras-chave para mim?
         </button>
-        <button style={styles.exampleButton}>
+        <button style={styles.exampleButton} onClick={() => setPergunta("Como posso otimizar meus anúncios para atrair mais clientes?")}>
           Como posso otimizar meus anúncios para atrair mais clientes?
         </button>
-        <button style={styles.exampleButton}>
+        <button style={styles.exampleButton} onClick={() => setPergunta("Como posso melhorar o ranqueamento da minha loja nos mecanismos de busca?")}>
           Como posso melhorar o ranqueamento da minha loja nos mecanismos de busca?
         </button>
+
+        {resposta && <div style={styles.resposta} dangerouslySetInnerHTML={{ __html: resposta }} />}
+        {erro && <div style={styles.erro}>{erro}</div>}
+        {loading && <p style={styles.loadingText}>Carregando resposta...</p>}
       </div>
 
       <div style={styles.footer}>
@@ -122,9 +181,12 @@ export default function Modal({ isOpen, setOpenModal }) {
           type="text"
           placeholder="Digite sua dúvida..."
           style={styles.input}
+          value={pergunta}
+          onChange={(e) => setPergunta(e.target.value)}
           aria-label="Campo de digitação"
+          onKeyDown={(e) => { if(e.key === 'Enter') handleEnviar() }}
         />
-        <span style={styles.buttonIcon}>📨</span>
+        <span style={styles.buttonIcon} onClick={handleEnviar} role="button" tabIndex={0} onKeyDown={(e) => { if(e.key === 'Enter') handleEnviar() }}>📨</span>
       </div>
     </div>
   );
