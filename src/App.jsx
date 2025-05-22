@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import Modal from './assets/modal/modal'
+import Modal from './templates/chat'
 import { FaRobot } from 'react-icons/fa'
 
 function App() {
