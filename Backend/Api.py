@@ -41,19 +41,50 @@ Pergunta: "{pergunta}"
     )
     return formatar_em_html(response.text)
 
-# Formata a resposta em HTML
 def formatar_em_html(texto):
-    texto = texto.replace("\n", "<br>")
+    """
+    Formata a resposta em HTML para uma aparência mais amigável:
+    - Negrito com <strong>
+    - Listas com marcadores HTML (<ul><li>)
+    - Quebras de linha com <br>
+    - Envolvimento em <div> com classe para estilização
+    """
+    texto = texto.strip()
+    
+    # Negrito com **texto**
     texto = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', texto)
 
-    # Converte listas com "* " em <ul><li>
-    itens = re.findall(r'^\* (.+)$', texto, flags=re.MULTILINE)
-    if itens:
-        lista = "<ul>" + "".join(f"<li>{item}</li>" for item in itens) + "</ul>"
-        texto = re.sub(r'(^\* .+$\n?)+', '', texto, flags=re.MULTILINE)
-        texto += lista
+    # Quebra de linha com <br>
+    texto = texto.replace('\n', '<br>')
 
-    return texto
+    # Captura listas marcadas com "* "
+    padrao_lista = r'(?:\* .+(?:<br>)?)+'
+    listas_encontradas = re.findall(padrao_lista, texto)
+
+    for bloco in listas_encontradas:
+        itens = re.findall(r'\* (.+?)(?:<br>|$)', bloco)
+        lista_html = "<ul style='padding-left: 1.2rem; margin: 0.5rem 0;'>"
+        lista_html += "".join(f"<li style='margin-bottom: 0.4rem;'>{item.strip()}</li>" for item in itens)
+        lista_html += "</ul>"
+        texto = texto.replace(bloco, lista_html)
+
+    # Envolve tudo em um <div> estilizado
+    html = f"""
+    <div style="
+        background-color: #111827;
+        color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: sans-serif;
+        font-size: 1rem;
+        line-height: 1.6;
+    ">
+        {texto}
+    </div>
+    """
+    return html
+
+
 
 # Rota principal da API
 @app.route('/pergunta', methods=['POST'])
